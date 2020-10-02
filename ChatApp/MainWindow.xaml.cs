@@ -19,6 +19,18 @@ namespace ChatApp {
 
         public MainWindow() {
             InitializeComponent();
+
+            Client client = new Client();
+
+            client.Connect("datakomm.work", 1300);
+
+            //this works
+            //client.SendCommand("5+5\n");
+
+            client.SendCommand("msg hello world\n");
+
+            client.Disconnect();
+
         }
 
     }
