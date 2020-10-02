@@ -30,18 +30,20 @@ namespace ChatApp {
                 SocketType.Stream, ProtocolType.Tcp);
 
                 connection.Connect(remoteEP);
-
+                
                 client_logger.Log("Connected to server : " + connection.RemoteEndPoint.ToString());
                 return true;
             }
             catch (SocketException e) {
                 client_logger.Exception("Connection to server failed : " + e.Message);
+                lastError = e.Message;
                 return false;
             }
         }
 
         public void Disconnect() {
             if (IsConnectionActive()) {
+                client_logger.Log("Diconnecting from host");
                 connection.Close();
             }
         }

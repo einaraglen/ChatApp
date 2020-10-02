@@ -12,25 +12,51 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Text.RegularExpressions;
 
 namespace ChatApp {
 
+    //GUI Controller
     public partial class MainWindow : Window {
+
+        private Client client = new Client();
 
         public MainWindow() {
             InitializeComponent();
+            AddEventListeners();
+        }
 
-            Client client = new Client();
+        private void AddEventListeners() {
+            send.Click += Send_Click;
+            connect.Click += Connect_Click;
+        }
 
-            client.Connect("datakomm.work", 1300);
+        private void Send_Click(object sender, RoutedEventArgs e) {
+            Console.WriteLine("sup");
+        }
 
-            //this works
-            //client.SendCommand("5+5\n");
+        private void Connect_Click(object sender, RoutedEventArgs e) {
+            if (client.IsConnectionActive()) {
+                client.Disconnect();
+                connect.Content = "Connect";
 
-            client.SendCommand("msg hello world\n");
+                logText.Content = "Disconnected from host";
+            }
+            else if (address.Text.Trim(' ') != "" && port.Text.Trim(' ') != "") {
+                client.Connect(address.Text.Trim(' '), Int32.Parse(port.Text.Trim(' ')));
 
-            client.Disconnect();
+                connect.Content = "Disconnect";
+            }
 
+            if (!client.IsConnectionActive()) {
+                logText.Content = client.GetLastError();
+            }
+        }
+
+        //Makes Port only accept numbers
+        private void NumberValidationTextBox(object sender, TextCompositionEventArgs e) {
+            Regex regex = new Regex("[^0-9]+");
+            e.Handled = regex.IsMatch(e.Text);
         }
 
     }

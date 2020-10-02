@@ -5,8 +5,61 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ChatApp"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="ChatApp" Height="450" Width="800">
     <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="180" />
+            <ColumnDefinition />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition />
+            <RowDefinition Height="30"/>
+        </Grid.RowDefinitions>
 
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition />
+                <RowDefinition Height="60"/>
+                <RowDefinition Height="60"/>
+            </Grid.RowDefinitions>
+
+            <Button Grid.Row="1" x:Name="authorize" Height="40" Width="130">Authorize</Button>
+            <Button Grid.Row="2" x:Name="help" Height="40" Width="130">Help</Button>
+        </Grid>
+
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="70"/>
+                <RowDefinition />
+                <RowDefinition Height="40"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition />
+                    <ColumnDefinition />
+                    <ColumnDefinition />
+                    <ColumnDefinition />
+                </Grid.ColumnDefinitions>
+
+                <Label Grid.Column="0" HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="15">Address</Label>
+                <TextBox Grid.Column="1" x:Name="address" Height="20" FontSize="13"></TextBox>
+                <Label Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="15">Port</Label>
+                <TextBox Grid.Column="3" x:Name="port" Height="20" FontSize="13" PreviewTextInput="NumberValidationTextBox" MaxLength="4"></TextBox>
+                <Button Grid.Column="4" x:Name="connect" Width="100" Height="30">Connect</Button>
+            </Grid>
+
+            <Grid Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition Width="100"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBox Grid.Column="0" FontSize="18" Margin="10 0 10 12"></TextBox>
+                <Button Grid.Column="1" x:Name="send" Width="60" Margin="10 0 10 12">Send</Button>
+            </Grid>
+        </Grid>
+        <Label Grid.Row="1" Grid.Column="1" x:Name="logText" FontSize="12" Margin="5 0 0 0"></Label>
     </Grid>
 </Window>
