@@ -11,17 +11,17 @@ namespace ChatApp {
 
         private Socket connection;
 
-        private Logger client_logger = new Logger(true);
-        private Logger server_logger = new Logger(false);
+        private readonly Logger client_logger = new Logger(true);
+        private readonly Logger server_logger = new Logger(false);
 
         private string lastError = null;
-        private static List<ChatListener> listeners = null;
+
+        private readonly List<string> users = new List<string>();
 
         public bool Connect(string host, int port) {
-
-            byte[] bytes = new byte[1024];
-
             try {
+                byte[] bytes = new byte[1024];
+
                 IPHostEntry _host = Dns.GetHostEntry(host);
                 IPAddress ipAddress = _host.AddressList[0];
                 IPEndPoint remoteEP = new IPEndPoint(ipAddress, port);
@@ -32,6 +32,9 @@ namespace ChatApp {
                 connection.Connect(remoteEP);
                 
                 client_logger.Log("Connected to server : " + connection.RemoteEndPoint.ToString());
+
+                StartListenThread();
+
                 return true;
             }
             catch (SocketException e) {
@@ -45,7 +48,12 @@ namespace ChatApp {
             if (IsConnectionActive()) {
                 client_logger.Log("Diconnecting from host");
                 connection.Close();
+                connection = null;
             }
+        }
+
+        public List<string> Users {
+            get { return users; }
         }
 
         public bool IsConnectionActive() {
@@ -55,99 +63,64 @@ namespace ChatApp {
         public bool SendCommand(string command) {
             if (IsConnectionActive()) {
                 byte[] msg = Encoding.ASCII.GetBytes(command);
-                // Send the data through the socket. returns bytes sendt 
                 try {
                     connection.Send(msg);
-
-                    //Buffer
-                    byte[] bytes = new byte[1024];
-
-                    int bytesRec = connection.Receive(bytes);
-                    string response = Encoding.ASCII.GetString(bytes, 0, bytesRec);
-
-                    server_logger.Log(response);
-
                     return true;
                 }
-                catch(Exception e) {
+                catch (Exception e) {
                     server_logger.Exception("Sending command failed : " + e.Message);
                     return false;                
                 }
             }
             else {
-                client_logger.Exception("Command not sendt, Connection not active");
+                lastError = "Command not sendt, Connection not active";
+                client_logger.Exception(lastError);
                 return false;
             }
         }
 
         public bool SendPublicMessage(string message) {
-            //Buffer
-            byte[] bytes = new byte[1024];
             string command = "msg " + message + "\n";
 
             bool success = SendCommand(command);
 
-            int bytesRec = connection.Receive(bytes);
-            string response = Encoding.ASCII.GetString(bytes, 0, bytesRec);
-
-            if (success && response.Contains("msgok")) {
+            if (success) {
                 return true;
             }
             else {
-                // removes "msgerror "
-                //lastError = response.Substring(8);
-                server_logger.Exception("Public not sendt : " + response);
+                server_logger.Exception("Public not sendt : " + lastError);
                 return false;
             }
         }
 
         public void TryLogin(string username) {
-            //Buffer
-            byte[] bytes = new byte[1024];
             string command = "login " + username + "\n";
 
             bool success = SendCommand(command);
 
-            int bytesRec = connection.Receive(bytes);
-            string response = Encoding.ASCII.GetString(bytes, 0, bytesRec);
-
-            if (success && response.Contains("loginok")) {
-                //return true;
-            }
-            else {
-                // removes "loginerr "
-                //lastError = response.Substring(8);
-                server_logger.Exception("Try login failed : " + response);
+            if (!success) {
+                server_logger.Exception("Try login failed : " + lastError);
             }
         }
 
         public void RefreshUserList() {
-
+            if (IsConnectionActive()) {
+                SendCommand("users\n");
+            }
         }
 
         public bool SendPrivateMessage(string recipient, string message) {
-            //Buffer
-            byte[] bytes = new byte[1024];
             string command = "privmsg " + recipient + " " + message + "\n";
 
             bool success = SendCommand(command);
 
-            int bytesRec = connection.Receive(bytes);
-            string response = Encoding.ASCII.GetString(bytes, 0, bytesRec);
-
-            if (success && response.Contains("msgok 1")) {
+            if (success) {
                 return true;
             }
             else {
-                // removes "msgerr "
-                //lastError = response.Substring(6);
-                server_logger.Exception("Private not sendt : " + response);
+                server_logger.Exception("Private not sendt : " + lastError);
                 return false;
             }
-        }
-
-        public void AskSupportedCommand() {
-
         }
 
         public string WaitServerResponse() {
@@ -159,7 +132,62 @@ namespace ChatApp {
                 return lastError;
             }
             else {
-                return "";
+                return "NO ERROR FOUND";
+            }
+        }
+
+        public void OnMessageRecieved(string sender, bool priv, string message) {
+
+        }
+
+        private void HandleResponse() {
+            try {
+                byte[] bytes = new byte[1024];
+
+                int bytesRec = connection.Receive(bytes);
+                string response = Encoding.ASCII.GetString(bytes, 0, bytesRec);
+
+                string[] info = response.Split(' ');
+
+                //passes first command into switch -> <command> <info> <info> .... \n
+                switch (info[0]) {
+                    case "msg":
+                        //<command> <user> <msg>\n
+                        OnMessageRecieved(info[1], false, info[2]);
+                        break;
+
+                    case "privmsg":
+                        //<command> <sender> <msg>\n
+                        OnMessageRecieved(info[1], true, info[2]);
+                        break;
+
+                    case "users":
+                        for (int i = 1; i < info.Length; i++) { users.Add(info[i]); }
+                        break;
+
+                    case "cmderr":
+                        lastError = "Command error : command not supported";
+                        break;
+
+                    case "msgerror":
+                        lastError = "Public message error : " + response.Substring(8);
+                        break;
+
+                    case "msgerr":
+                        lastError = "Private message error : " + response.Substring(6);
+                        break;
+
+                    case "loginerr":
+                        lastError = "Login error : " + response.Substring(8);
+                        break;
+
+                    default:
+                        lastError = "CRITICAL ERROR";
+                        break;
+                }
+            }
+            catch (Exception e) {
+                client_logger.Exception("No response from server : " + e.Message);
             }
         }
 
@@ -171,44 +199,8 @@ namespace ChatApp {
 
         public void ParseIncomingCommand() {
             while (IsConnectionActive()) {
-
+                HandleResponse();
             }
-        }
-
-        public void AddListener(ChatListener listener) {
-            if (!listeners.Contains(listener)) {
-                listeners.Add(listener);
-            }
-        }
-
-        public void RemoveListener(ChatListener listener) {
-            listeners.Remove(listener);
-        }
-
-        public void OnLoginResult(bool success, string errorMessage) {
-            foreach (ChatListener listener in listeners) {
-                listener.OnLoginResults(success, errorMessage);
-            }
-        }
-
-        public void OnDisconnect() {
-
-        }
-
-        private void OnMsgReceived(bool priv, string sender, string text) {
-
-        }
-
-        private void OnMessageError(string errorMessage) {
-
-        }
-
-        private void OnCmdError(string errorMessage) {
-
-        }
-
-        private void OnSupported(List<string> commands) {
-
         }
 
     }
