@@ -17,6 +17,12 @@ namespace ChatApp {
         private string lastError = null;
 
         private readonly List<string> users = new List<string>();
+        private readonly MainWindow controller;
+        private bool loggedIn;
+
+        public Client(MainWindow mainWindow) {
+            this.controller = mainWindow;
+        }
 
         public bool Connect(string host, int port) {
             try {
@@ -84,6 +90,8 @@ namespace ChatApp {
 
             bool success = SendCommand(command);
 
+            controller.UpdateMessagePanel("You", false, message);
+
             if (success) {
                 return true;
             }
@@ -96,10 +104,14 @@ namespace ChatApp {
         public void TryLogin(string username) {
             string command = "login " + username + "\n";
 
-            bool success = SendCommand(command);
+            loggedIn = SendCommand(command);
 
-            if (!success) {
+            if (!loggedIn) {
+                controller.OnLoginResults(loggedIn, lastError);
                 server_logger.Exception("Try login failed : " + lastError);
+            }
+            else {
+                controller.OnLoginResults(loggedIn, lastError);
             }
         }
 
@@ -114,6 +126,8 @@ namespace ChatApp {
 
             bool success = SendCommand(command);
 
+            controller.UpdateMessagePanel("You to " + recipient, true, message);
+
             if (success) {
                 return true;
             }
@@ -123,21 +137,17 @@ namespace ChatApp {
             }
         }
 
-        public string WaitServerResponse() {
-            return null;
-        }
-
         public string GetLastError() {
             if (lastError != null) {
                 return lastError;
             }
             else {
-                return "NO ERROR FOUND";
+                return "";
             }
         }
 
-        public void OnMessageRecieved(string sender, bool priv, string message) {
-
+        public void OnMessageRecieved(TextMessage message) {
+            controller.UpdateMessagePanel(message.Sender, message.Private, message.Text);
         }
 
         private void HandleResponse() {
@@ -152,16 +162,15 @@ namespace ChatApp {
                 //passes first command into switch -> <command> <info> <info> .... \n
                 switch (info[0]) {
                     case "msg":
-                        //<command> <user> <msg>\n
-                        OnMessageRecieved(info[1], false, info[2]);
+                        HandleMessage(info, false);
                         break;
 
                     case "privmsg":
-                        //<command> <sender> <msg>\n
-                        OnMessageRecieved(info[1], true, info[2]);
+                        HandleMessage(info, true);
                         break;
 
                     case "users":
+                        //<command> <user 1> <user 2> ... <user n>\n
                         for (int i = 1; i < info.Length; i++) { users.Add(info[i]); }
                         break;
 
@@ -182,13 +191,22 @@ namespace ChatApp {
                         break;
 
                     default:
-                        lastError = "CRITICAL ERROR";
+                        lastError = "Command error";
                         break;
                 }
             }
             catch (Exception e) {
                 client_logger.Exception("No response from server : " + e.Message);
             }
+        }
+
+        private void HandleMessage(string[] info, bool priv) {
+            //<command> <user> <msg> ... \n
+            string fullMessage = "";
+            for (int i = 2; i < info.Length; i++) {
+                fullMessage += info[i] + " ";
+            }
+            OnMessageRecieved(new TextMessage(info[1], priv, fullMessage));
         }
 
         public void StartListenThread() {

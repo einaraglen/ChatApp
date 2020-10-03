@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ChatApp"
         mc:Ignorable="d"
+        Closing="Window_Closing"
         Title="ChatApp" Height="450" Width="800">
     <Border BorderThickness="0 1 0 0" BorderBrush="Gray">
         <Grid>
@@ -21,6 +22,7 @@
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition />
+                        <RowDefinition x:Name="loginRow" Height="00"/>
                         <RowDefinition Height="60"/>
                         <RowDefinition Height="60"/>
                     </Grid.RowDefinitions>
@@ -32,8 +34,10 @@
                             </StackPanel>
                         </ScrollViewer>
                     </Border>
-                    <Button Grid.Row="1" x:Name="authorize" Height="40" Width="130">Authorize</Button>
-                    <Button Grid.Row="2" x:Name="help" Height="40" Width="130">Help</Button>
+                    <Label Grid.Row="1" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10 0 0 0">Username</Label>
+                    <TextBox Grid.Row="1" x:Name="username" Height="20" Width="80" HorizontalAlignment="Right" Margin="0 0 10 0"></TextBox>
+                    <Button Grid.Row="2" x:Name="authorize" Height="40" Width="130">Authorize</Button>
+                    <Button Grid.Row="3" x:Name="help" Height="40" Width="130">Help</Button>
                 </Grid>
             </Border>
 
@@ -60,11 +64,24 @@
                     <Button Grid.Column="4" x:Name="connect" Height="30" Margin="15 0 10 0">Connect</Button>
                 </Grid>
 
-                <ScrollViewer Grid.Row="1" Background="LightGray" Margin="10">
-                    <StackPanel x:Name="messageViewer">
-                        <!-- Messages are put here -->
-                    </StackPanel>
-                </ScrollViewer>
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition />
+                        <ColumnDefinition />
+                    </Grid.ColumnDefinitions>
+
+                    <ScrollViewer Grid.Column="0" Background="LightGray" Margin="10 10 0 10">
+                        <StackPanel x:Name="messagePanel">
+                            <!-- Public Messages are put here -->
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <ScrollViewer Grid.Column="1" Background="LightGray" Margin="0 10 10 10">
+                        <StackPanel x:Name="privatePanel">
+                            <!-- Public Messages are put here -->
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
 
                 <Grid Grid.Row="2">
                     <Grid.ColumnDefinitions>

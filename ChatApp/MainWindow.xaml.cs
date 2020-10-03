@@ -14,18 +14,27 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Text.RegularExpressions;
 using System.Timers;
+using System.ComponentModel;
 
 namespace ChatApp {
 
     //GUI Controller
     public partial class MainWindow : Window {
 
-        private Client client = new Client();
+        private Client client;
+        private bool loginOpen = false;
+        private bool authorized = false;
 
         public MainWindow() {
             InitializeComponent();
             AddEventListeners();
             InitTimer();
+
+            client = new Client(this);
+        }
+
+        public void Window_Closing(object sender, CancelEventArgs e) {
+            client.Disconnect();
         }
 
         private void AddEventListeners() {
@@ -36,8 +45,26 @@ namespace ChatApp {
 
         private void Send_Click(object sender, RoutedEventArgs e) {
             if (client.IsConnectionActive() && message.Text.Trim(' ') != "") {
-                client.SendPublicMessage(message.Text);
-                logText.Content = "";
+
+                string[] info = message.Text.Split(' ');
+
+                if (info[0].Equals("/private")) {
+                    string text = "";
+                    string recipient = info[1];
+
+                    for (int i = 2; i < info.Length; i++) {
+                        text += info[i];
+                    }
+
+                    client.SendPrivateMessage(recipient, text);
+                    logText.Content = "";
+                }
+                else {
+                    client.SendPublicMessage(message.Text);
+                    logText.Content = "";
+                }
+
+                message.Text = "";
             }
             else {
                 logText.Content = "Connection not active or faulty input";
@@ -55,17 +82,52 @@ namespace ChatApp {
             client.RefreshUserList();
             List<string> users = client.Users;
 
-            this.Dispatcher.Invoke(() => {
-                userPanel.Children.Clear();
+            try {
+                this.Dispatcher.Invoke(() => {
+                    userPanel.Children.Clear();
 
-                if (users.Count != 0) {
-                    foreach (string user in users.ToArray()) {
-                        Label label = new Label();
-                        label.Content = user;
-                        userPanel.Children.Add(label);
+                    if (users.Count != 0) {
+                        foreach (string user in users.ToArray()) {
+                            Label label = new Label();
+                            label.Content = user;
+
+                            label.ContextMenu = new ContextMenu();
+                            MenuItem item = new MenuItem();
+                            item.Header = "Private message to " + user;
+                            item.Click += Item_Click;
+                            label.ContextMenu.Items.Add(item);
+
+                            userPanel.Children.Add(label);
+                        }
+
+                        users.Clear();
                     }
+                });
+            }
+            catch (Exception exc) {
+                Console.WriteLine(exc.Message);
+            }
+        }
 
-                    users.Clear();
+        private void Item_Click(object sender, RoutedEventArgs e) {
+            //get the name from the sender, really hack code but found no other way
+            string[] info = sender.ToString().Split('.');
+            string[] arr = info[3].Split(' ');
+            message.Text = "/private " + arr[4];
+        }
+
+        //Cannot get method to take TextMessage as parameter for some reason
+        public void UpdateMessagePanel(string sender, bool priv, string text) {
+            TextMessage message = new TextMessage(sender, priv, text);
+
+            this.Dispatcher.Invoke(() => {
+                Label label = new Label();
+                label.Content = message.ToString();
+                if (priv) {
+                    privatePanel.Children.Add(label);
+                }
+                else {
+                    messagePanel.Children.Add(label);
                 }
             });
         }
@@ -89,7 +151,30 @@ namespace ChatApp {
         }
 
         private void Authorize_Click(object sender, RoutedEventArgs e) {
+            if (!authorized) {
+                if (loginOpen) {
 
+                    if (username.Text != "") {
+                        client.TryLogin(username.Text);
+                        authorized = true;
+                    }
+                    else {
+                        logText.Content = "Username not allowed";
+                    }
+
+                    loginRow.Height = new GridLength(0);
+                    authorize.Content = "Authorize";
+                    loginOpen = false;
+                }
+                else {
+                    loginRow.Height = new GridLength(60);
+                    authorize.Content = "Try";
+                    loginOpen = true;
+                }
+            }
+            else {
+                logText.Content = "Already Authorized";
+            }
         }
 
         //Makes Port only accept numbers
@@ -105,7 +190,7 @@ namespace ChatApp {
                 logText.Content = "Login successful";
             }
             else {
-                logText.Content = "Login failed";
+                logText.Content = errorMessage;
             }
         }
     }
