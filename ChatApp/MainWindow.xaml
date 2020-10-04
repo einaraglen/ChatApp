@@ -36,7 +36,7 @@
                     </Border>
                     <Label Grid.Row="1" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10 0 0 0">Username</Label>
                     <TextBox Grid.Row="1" x:Name="username" Height="20" Width="80" HorizontalAlignment="Right" Margin="0 0 10 0"></TextBox>
-                    <Button Grid.Row="2" x:Name="authorize" Height="40" Width="130">Authorize</Button>
+                    <Button Grid.Row="2" x:Name="authorize" IsEnabled="False" Height="40" Width="130">Authorize</Button>
                     <Button Grid.Row="3" x:Name="help" Height="40" Width="130">Help</Button>
                 </Grid>
             </Border>
@@ -90,7 +90,7 @@
                     </Grid.ColumnDefinitions>
 
                     <TextBox Grid.Column="0" x:Name="message" FontSize="18" Margin="10 0 10 12"></TextBox>
-                    <Button Grid.Column="1" x:Name="send" Width="60" Margin="10 0 10 12" HorizontalAlignment="Right">Send</Button>
+                    <Button Grid.Column="1" x:Name="send" IsEnabled="False" Width="60" Margin="10 0 10 12" HorizontalAlignment="Right">Send</Button>
                 </Grid>
             </Grid>
             <Grid Grid.Row="1" Grid.Column="0" Background="LightGray"></Grid>

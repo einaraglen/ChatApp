@@ -30,7 +30,7 @@ namespace ChatApp {
 
         override
         public string ToString() {
-            return "" + DateTime.Now.ToString("HH:mm") + ((this.sender.Equals("You")) ? " " : " from ") + this.sender + " : " + text;
+            return "" + DateTime.Now.ToString("HH:mm") + " " + this.sender + " : " + text;
         }
 
     }

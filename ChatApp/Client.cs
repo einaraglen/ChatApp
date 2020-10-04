@@ -25,27 +25,39 @@ namespace ChatApp {
         }
 
         public bool Connect(string host, int port) {
+            bool connected = false;
+            byte[] bytes = new byte[1024];
+
+            IPHostEntry _host = null;
+            IPAddress ipAddress = null;
+            IPEndPoint remoteEP = null;
+
             try {
-                byte[] bytes = new byte[1024];
+                _host = Dns.GetHostEntry(host);
+                ipAddress = _host.AddressList[0];
+                remoteEP = new IPEndPoint(ipAddress, port);
 
-                IPHostEntry _host = Dns.GetHostEntry(host);
-                IPAddress ipAddress = _host.AddressList[0];
-                IPEndPoint remoteEP = new IPEndPoint(ipAddress, port);
-
-                connection = new Socket(ipAddress.AddressFamily,
-                SocketType.Stream, ProtocolType.Tcp);
+                connection = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
                 connection.Connect(remoteEP);
-                
+                connected = true;
+            }
+            catch (SocketException e) {
+                client_logger.Exception("Connection to server failed : " + e.Message);
+                lastError = e.Message;
+                connected = false;
+            }
+
+            if (connected) {
+
                 client_logger.Log("Connected to server : " + connection.RemoteEndPoint.ToString());
+                controller.SetLogText("Connected to server : " + connection.RemoteEndPoint.ToString());
 
                 StartListenThread();
 
                 return true;
             }
-            catch (SocketException e) {
-                client_logger.Exception("Connection to server failed : " + e.Message);
-                lastError = e.Message;
+            else {
                 return false;
             }
         }
@@ -101,18 +113,13 @@ namespace ChatApp {
             }
         }
 
-        public void TryLogin(string username) {
+        public bool TryLogin(string username) {
             string command = "login " + username + "\n";
+            SendCommand(command);
+            //wait for response
+            Thread.Sleep(500);
 
-            loggedIn = SendCommand(command);
-
-            if (!loggedIn) {
-                controller.OnLoginResults(loggedIn, lastError);
-                server_logger.Exception("Try login failed : " + lastError);
-            }
-            else {
-                controller.OnLoginResults(loggedIn, lastError);
-            }
+            return loggedIn;
         }
 
         public void RefreshUserList() {
@@ -124,15 +131,15 @@ namespace ChatApp {
         public bool SendPrivateMessage(string recipient, string message) {
             string command = "privmsg " + recipient + " " + message + "\n";
 
-            bool success = SendCommand(command);
+            SendCommand(command);
 
-            controller.UpdateMessagePanel("You to " + recipient, true, message);
-
-            if (success) {
+            if (users.Contains(recipient)) {
+                controller.UpdateMessagePanel("You to " + recipient, true, message);
                 return true;
             }
             else {
-                server_logger.Exception("Private not sendt : " + lastError);
+                server_logger.Exception("Private not sendt : No recipient with this username");
+                controller.SetLogText("Private not sendt : No recipient with this username");
                 return false;
             }
         }
@@ -183,11 +190,16 @@ namespace ChatApp {
                         break;
 
                     case "msgerr":
-                        lastError = "Private message error : " + response.Substring(6);
+                        lastError = "Private message error : " + response.Substring(5);
                         break;
 
                     case "loginerr":
+                        loggedIn = false;
                         lastError = "Login error : " + response.Substring(8);
+                        break;
+
+                    case "loginok\n":
+                        loggedIn = true;
                         break;
 
                     default:
