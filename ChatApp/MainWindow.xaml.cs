@@ -18,7 +18,7 @@ using System.ComponentModel;
 
 namespace ChatApp {
 
-    //GUI Controller
+    //GUI controller
     public partial class MainWindow : Window {
 
         private Client client;
@@ -30,10 +30,12 @@ namespace ChatApp {
             AddEventListeners();
             InitTimer();
 
+            //passes controller to client as listener
             client = new Client(this);
         }
 
         public void Window_Closing(object sender, CancelEventArgs e) {
+            //closes client socket on program exit
             client.Disconnect();
         }
 
@@ -45,6 +47,7 @@ namespace ChatApp {
 
         private void Connect_Click(object sender, RoutedEventArgs e) {
             if (client.IsConnectionActive()) {
+                //disconnect from server
                 client.Disconnect();
                 connect.Content = "Connect";
                 send.IsEnabled = false;
@@ -55,6 +58,7 @@ namespace ChatApp {
                 logText.Content = "Disconnected from host";
             }
             else if (address.Text.Trim(' ') != "" && port.Text.Trim(' ') != "") {
+                //connect to server
                 if (client.Connect(address.Text.Trim(' '), Int32.Parse(port.Text.Trim(' ')))) {
                     connect.Content = "Disconnect";
                     send.IsEnabled = true;
@@ -101,6 +105,8 @@ namespace ChatApp {
         }
 
         public void SetLogText(string text) {
+            //dispatcher is ised to update gui elements from other
+            //threads as this can cause exception
             this.Dispatcher.Invoke(() => {
                 logText.Content = text;
             });
@@ -126,9 +132,12 @@ namespace ChatApp {
                             Label label = new Label();
                             label.Content = user;
 
+                            //creates menuitem for right click on user list
                             label.ContextMenu = new ContextMenu();
                             MenuItem item = new MenuItem();
                             item.Header = "Private message to " + user;
+                            //set tag so we can retreve user when clicked
+                            item.Tag = user;
                             item.Click += Item_Click;
                             label.ContextMenu.Items.Add(item);
 
@@ -140,30 +149,23 @@ namespace ChatApp {
                 });
             }
             catch (Exception exc) {
-                Console.WriteLine(exc.Message);
+                logText.Content = exc.Message;
             }
         }
 
         private void Item_Click(object sender, RoutedEventArgs e) {
             //get the name from the sender, really hack code but found no other way
-            string[] info = sender.ToString().Split('.');
-            string[] arr = info[3].Split(' ');
-            message.Text = "/private " + arr[4];
+            string userName = ((MenuItem)sender).Tag.ToString();
+            message.Text = "/private " + userName + " ";
         }
 
-        //Cannot get method to take TextMessage as parameter for some reason
-        public void UpdateMessagePanel(string sender, bool priv, string text) {
-            TextMessage message = new TextMessage(sender, priv, text);
 
+        public void UpdateMessagePanel(TextMessage message) {
             this.Dispatcher.Invoke(() => {
                 Label label = new Label();
                 label.Content = message.ToString();
-                if (priv) {
-                    privatePanel.Children.Add(label);
-                }
-                else {
-                    messagePanel.Children.Add(label);
-                }
+                Panel panel = message.Private ? privatePanel : messagePanel;
+                panel.Children.Add(label);
             });
         }
 
@@ -174,7 +176,7 @@ namespace ChatApp {
                 if (loginOpen) {
 
                     if (username.Text == "") {
-                        //logText.Content = "Username not allowed";
+                        logText.Content = "Username not allowed";
                     }
                     else {
                         bool success = client.TryLogin(username.Text);
@@ -198,12 +200,9 @@ namespace ChatApp {
                     loginOpen = true;
                 }
             }
-            else {
-                //logText.Content = "Already Authorized";
-            }
         }
 
-        //Makes Port only accept numbers
+        //makes Port only accept numbers
         private void NumberValidationTextBox(object sender, TextCompositionEventArgs e) {
             Regex regex = new Regex("[^0-9]+");
             e.Handled = regex.IsMatch(e.Text);

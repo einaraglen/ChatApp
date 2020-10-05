@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 
 namespace ChatApp {
-    class TextMessage {
+    public class TextMessage {
 
         private string sender;
         private bool priv;

@@ -15,7 +15,7 @@
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
                 <RowDefinition />
-                <RowDefinition Height="30"/>
+                <RowDefinition Height="25"/>
             </Grid.RowDefinitions>
 
             <Border BorderThickness="0 0 1 0" BorderBrush="Gray">
@@ -95,7 +95,7 @@
             </Grid>
             <Grid Grid.Row="1" Grid.Column="0" Background="LightGray"></Grid>
             <Grid Grid.Row="1" Grid.Column="1" Background="LightGray">
-                <Label x:Name="logText" FontSize="12" Margin="5 0 0 0"></Label>
+                <Label x:Name="logText" FontSize="11" Margin="5 0 0 0"></Label>
             </Grid>
         </Grid>
     </Border>
