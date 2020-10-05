@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -127,13 +128,19 @@ namespace ChatApp {
             }
         }
 
+        public void AskSupportedCommands() {
+            if (IsConnectionActive()) {
+                SendCommand("help");
+            }
+        }
+
         public bool SendPrivateMessage(string recipient, string message) {
             string command = "privmsg " + recipient + " " + message;
 
             SendCommand(command);
 
             if (users.Contains(recipient)) {
-                controller.UpdateMessagePanel(new TextMessage("You to" + recipient, true, message));
+                controller.UpdateMessagePanel(new TextMessage("You to " + recipient, true, message));
             }
             else {
                 controller.SetLogText("Private not sendt : No recipient with this username");
@@ -193,6 +200,10 @@ namespace ChatApp {
                         loggedIn = true;
                         break;
 
+                    case "supported":
+                        controller.SetLogText("Server supports commands : " + response.Substring(10));
+                        break;
+
                     default:
                         lastError = "Command error";
                         break;
@@ -200,7 +211,7 @@ namespace ChatApp {
             }
             catch (Exception e) {
                 //client_logger.Exception("No response from server : " + e.Message);
-                controller.SetLogText("No response from server : " + e.Message);
+                lastError = "No response from server : " + e.Message;
             }
         }
 
@@ -210,6 +221,8 @@ namespace ChatApp {
             for (int i = 2; i < info.Length; i++) {
                 fullMessage += info[i] + " ";
             }
+            //remove newline, struggled to find fix here
+            fullMessage = Regex.Replace(fullMessage, @"\t|\n|\r", "");
             OnMessageRecieved(new TextMessage(info[1], priv, fullMessage));
         }
 

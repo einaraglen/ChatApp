@@ -15,6 +15,7 @@ using System.Windows.Shapes;
 using System.Text.RegularExpressions;
 using System.Timers;
 using System.ComponentModel;
+using System.Threading;
 
 namespace ChatApp {
 
@@ -22,13 +23,13 @@ namespace ChatApp {
     public partial class MainWindow : Window {
 
         private Client client;
+        private System.Timers.Timer timer;
         private bool loginOpen = false;
         private bool authorized = false;
 
         public MainWindow() {
             InitializeComponent();
             AddEventListeners();
-            InitTimer();
 
             //passes controller to client as listener
             client = new Client(this);
@@ -43,6 +44,7 @@ namespace ChatApp {
             send.Click += Send_Click;
             connect.Click += Connect_Click;
             authorize.Click += Authorize_Click;
+            help.Click += Help_Click;
         }
 
         private void Connect_Click(object sender, RoutedEventArgs e) {
@@ -52,10 +54,16 @@ namespace ChatApp {
                 connect.Content = "Connect";
                 send.IsEnabled = false;
                 authorize.IsEnabled = false;
-
+                help.IsEnabled = false;
                 authorized = false;
-
+                //reset GUI
+                messagePanel.Children.Clear();
+                privatePanel.Children.Clear();
+                userPanel.Children.Clear();
+                userCount.Content = "";
                 logText.Content = "Disconnected from host";
+
+                StopTimer();
             }
             else if (address.Text.Trim(' ') != "" && port.Text.Trim(' ') != "") {
                 //connect to server
@@ -63,14 +71,16 @@ namespace ChatApp {
                     connect.Content = "Disconnect";
                     send.IsEnabled = true;
                     authorize.IsEnabled = true;
+                    help.IsEnabled = true;
+                    //start refresh timer
+                    InitTimer();
                 }
                 else {
                     logText.Content = "Connection failed";
                     client.Disconnect();
                 }
             }
-
-            if (!client.IsConnectionActive()) {
+            else {
                 logText.Content = client.GetLastError();
             }
         }
@@ -88,9 +98,15 @@ namespace ChatApp {
                         text += info[i] + " ";
                     }
 
-                    if (client.SendPrivateMessage(recipient, text)) {
-                        logText.Content = "";
+                    if (authorized) {
+                        if (client.SendPrivateMessage(recipient, text)) {
+                            logText.Content = "";
+                        }
                     }
+                    else {
+                        logText.Content = "Not authorized, Please login";
+                    }
+
                 }
                 else {
                     client.SendPublicMessage(message.Text);
@@ -105,18 +121,23 @@ namespace ChatApp {
         }
 
         public void SetLogText(string text) {
-            //dispatcher is ised to update gui elements from other
+            //dispatcher is used to update gui elements from other
             //threads as this can cause exception
             this.Dispatcher.Invoke(() => {
                 logText.Content = text;
             });
         }
 
-        public void InitTimer() {
-            Timer timer = new Timer(1000);
+        private void InitTimer() {
+            timer = new System.Timers.Timer(1000);
             timer.Elapsed += Tick;
             timer.AutoReset = true;
             timer.Enabled = true;
+        }
+
+        private void StopTimer() {
+            timer.Stop();
+            timer.Dispose();
         }
 
         private void Tick(object sender, ElapsedEventArgs e) {
@@ -128,6 +149,9 @@ namespace ChatApp {
                     userPanel.Children.Clear();
 
                     if (users.Count != 0) {
+
+                        userCount.Content = "Users online : " + users.Count;
+
                         foreach (string user in users.ToArray()) {
                             Label label = new Label();
                             label.Content = user;
@@ -146,6 +170,9 @@ namespace ChatApp {
 
                         users.Clear();
                     }
+                    else {
+                        userCount.Content = "";
+                    }
                 });
             }
             catch (Exception exc) {
@@ -154,9 +181,13 @@ namespace ChatApp {
         }
 
         private void Item_Click(object sender, RoutedEventArgs e) {
-            //get the name from the sender, really hack code but found no other way
+            //get the name from the sender, given through tag
             string userName = ((MenuItem)sender).Tag.ToString();
             message.Text = "/private " + userName + " ";
+        }
+
+        private void Help_Click(object sender, RoutedEventArgs e) {
+            client.AskSupportedCommands();
         }
 
 
@@ -164,6 +195,11 @@ namespace ChatApp {
             this.Dispatcher.Invoke(() => {
                 Label label = new Label();
                 label.Content = message.ToString();
+
+                //byte[] color = {0, 0, 0};
+                //color[new Random().Next(1, 2)] = (byte)new Random().Next(100, 255);
+                //label.Foreground = new SolidColorBrush(Color.FromRgb(0, color[1], color[2]));
+
                 Panel panel = message.Private ? privatePanel : messagePanel;
                 panel.Children.Add(label);
             });
@@ -183,6 +219,7 @@ namespace ChatApp {
 
                         if (success) {
                             logText.Content = "Login successful";
+                            authorize.IsEnabled = false;
                             authorized = true;
                         }
                         else {
