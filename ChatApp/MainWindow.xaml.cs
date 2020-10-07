@@ -142,20 +142,32 @@ namespace ChatApp {
 
         private void Tick(object sender, ElapsedEventArgs e) {
             client.RefreshUserList();
-            List<string> users = client.Users;
 
             try {
+
+                UserList users = client.Users;
+
                 this.Dispatcher.Invoke(() => {
+                    userPanel.Children.Clear();
+                    foreach (User user in users.Users) {
+                        Label label = new Label();
+                        label.Content = user.Name;
+
+                        userPanel.Children.Add(label);
+                    }
+                });
+                /*this.Dispatcher.Invoke(() => {
+                    UserList users = client.Users;
                     userPanel.Children.Clear();
 
                     if (users.Count != 0) {
 
                         userCount.Content = "Users online : " + users.Count;
 
-                        foreach (string user in users.ToArray()) {
+                        foreach (User user in users.Users) {
                             Label label = new Label();
-                            label.Content = user;
-
+                            label.Content = user.Name;
+                            label.Foreground = user.ScreenColor;
                             //creates menuitem for right click on user list
                             label.ContextMenu = new ContextMenu();
                             MenuItem item = new MenuItem();
@@ -168,12 +180,12 @@ namespace ChatApp {
                             userPanel.Children.Add(label);
                         }
 
-                        users.Clear();
+                        //users.Clear();
                     }
                     else {
                         userCount.Content = "";
                     }
-                });
+                });*/
             }
             catch (Exception exc) {
                 logText.Content = exc.Message;
@@ -196,8 +208,6 @@ namespace ChatApp {
                 Label label = new Label();
                 label.Content = message.ToString();
 
-                //byte[] color = {0, 0, 0};
-                //color[new Random().Next(1, 2)] = (byte)new Random().Next(100, 255);
                 //label.Foreground = new SolidColorBrush(Color.FromRgb(0, color[1], color[2]));
 
                 Panel panel = message.Private ? privatePanel : messagePanel;

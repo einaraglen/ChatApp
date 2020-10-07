@@ -19,12 +19,13 @@ namespace ChatApp {
 
         private string lastError = null;
 
-        private readonly List<string> users = new List<string>();
+        private UserList users;
         private readonly MainWindow controller;
         private bool loggedIn;
 
         public Client(MainWindow mainWindow) {
             this.controller = mainWindow;
+            users = new UserList();
         }
 
         public bool Connect(string host, int port) {
@@ -67,7 +68,7 @@ namespace ChatApp {
             }
         }
 
-        public List<string> Users {
+        public UserList Users {
             get { return users; }
         }
 
@@ -139,14 +140,14 @@ namespace ChatApp {
 
             SendCommand(command);
 
-            if (users.Contains(recipient)) {
+            if (users.Get(recipient) != null) {
                 controller.UpdateMessagePanel(new TextMessage("You to " + recipient, true, message));
             }
             else {
                 controller.SetLogText("Private not sendt : No recipient with this username");
             }
 
-            return users.Contains(recipient);
+            return users.Get(recipient) != null;
         }
 
         public string GetLastError() {
@@ -175,8 +176,7 @@ namespace ChatApp {
                         break;
 
                     case "users":
-                        //<command> <user 1> <user 2> ... <user n>\n
-                        for (int i = 1; i < info.Length; i++) { users.Add(info[i]); }
+                        HandleUsers(info);
                         break;
 
                     case "cmderr":
@@ -212,6 +212,31 @@ namespace ChatApp {
             catch (Exception e) {
                 //client_logger.Exception("No response from server : " + e.Message);
                 lastError = "No response from server : " + e.Message;
+            }
+        }
+
+        private void HandleUsers(string[] info) {
+            //<command> <user 1> <user 2> ... <user n>\n
+            List<string> temp = new List<string>();
+            if (users.IsEmpty()) {
+                for (int i = 1; i < info.Length; i++) {
+                    users.Add(info[i]);
+                }
+            }
+            else {
+                //adds new users
+                foreach (string user in temp) {
+                    if (users.Get(user) == null) {
+                        users.Add(user);
+                    }
+                }
+                //removes disconnected users
+                for (int i = 0; i < users.Count; i++) {
+                    if (!temp.Contains(users.Users[i].Name)) {
+                        users.Remove(users.Users[i].Name);
+                        //i--;
+                    }
+                }
             }
         }
 
