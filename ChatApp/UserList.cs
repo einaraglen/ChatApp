@@ -14,6 +14,12 @@ namespace ChatApp {
             users.Add(new User(name));
         }
 
+        public void Add(List<string> usernames) {
+            foreach (string user in usernames) {
+                this.Add(user);
+            }
+        }
+
         public void Remove(string name) {
             users.Remove(this.Get(name));
         }
@@ -30,6 +36,10 @@ namespace ChatApp {
             users.Clear();
         }
 
+        public bool Contains(string name) {
+            return this.Get(name) != null;
+        }
+
         public User Get(string name) {
             foreach (User user in users) {
                 if (user.Name.Equals(name)) {
@@ -38,6 +48,10 @@ namespace ChatApp {
             }
 
             return null;
+        }
+
+        public User[] ToArray() {
+            return this.users.ToArray();
         }
 
         public List<User> Users {

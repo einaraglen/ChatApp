@@ -6,21 +6,22 @@ using System.Windows.Media;
 namespace ChatApp {
     class User {
         private string username;
-        private SolidColorBrush screenColor;
+        private byte[] screenColor;
 
         public User(string username) {
             this.username = username;
 
-            byte[] color = {0, 0, 0};
-            color[new Random().Next(0, 2)] = (byte)new Random().Next(100, 255);
-            this.screenColor = new SolidColorBrush(Color.FromRgb(0, color[1], color[2]));
+            this.screenColor = new byte[3];
+            this.screenColor[0] = (byte)new Random().Next(0, 255);
+            this.screenColor[1] = (byte)new Random().Next(0, 255);
+            this.screenColor[2] = (byte)new Random().Next(0, 255);
         }
 
         public string Name {
             get { return this.username; }
         }
 
-        public SolidColorBrush ScreenColor {
+        public byte[] ScreenColor {
             get { return this.screenColor; }
         }
     }

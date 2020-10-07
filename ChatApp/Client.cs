@@ -218,31 +218,40 @@ namespace ChatApp {
         private void HandleUsers(string[] info) {
             //<command> <user 1> <user 2> ... <user n>\n
             List<string> temp = new List<string>();
+            for (int i = 1; i < info.Length; i++) {
+                temp.Add(info[i]);
+            }
+
             if (users.IsEmpty()) {
-                for (int i = 1; i < info.Length; i++) {
-                    users.Add(info[i]);
-                }
+                users.Add(temp);
             }
             else {
                 //adds new users
                 foreach (string user in temp) {
-                    if (users.Get(user) == null) {
+                    if (!users.Contains(user)) {
                         users.Add(user);
                     }
                 }
-                //removes disconnected users
-                for (int i = 0; i < users.Count; i++) {
-                    if (!temp.Contains(users.Users[i].Name)) {
-                        users.Remove(users.Users[i].Name);
-                        //i--;
+                //remove disconnected users
+                //we copy the list so we do not get enumerator exceptio
+                //for editing list while iterating it
+                User[] copyArray = users.ToArray();
+                foreach (User user in copyArray) {
+                    if (!temp.Contains(user.Name)) {
+                        users.Remove(user.Name);
                     }
                 }
             }
+
         }
 
         private void HandleMessage(string[] info, bool priv) {
             //<command> <user> <msg> ... \n
             string fullMessage = "";
+
+
+
+
             for (int i = 2; i < info.Length; i++) {
                 fullMessage += info[i] + " ";
             }
@@ -260,7 +269,7 @@ namespace ChatApp {
         public void ParseIncomingCommand() {
             while (IsConnectionActive()) {
                 HandleResponse();
-            }
+      }
         }
 
     }
