@@ -4,7 +4,7 @@ using System.Text;
 using System.Windows.Media;
 
 namespace ChatApp {
-    class User {
+    public class User {
         private string username;
         private byte[] screenColor;
 

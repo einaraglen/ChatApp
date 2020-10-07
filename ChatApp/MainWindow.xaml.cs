@@ -14,6 +14,7 @@ namespace ChatApp {
     public partial class MainWindow : Window {
 
         private Client client;
+        private User[] users;
         private System.Timers.Timer timer;
         private bool loginOpen = false;
         private bool authorized = false;
@@ -22,8 +23,9 @@ namespace ChatApp {
             InitializeComponent();
             AddEventListeners();
 
-            //passes controller to client as listener
-            client = new Client(this);
+            //passes controller to listener as communicator for client
+            client = new Client(new Listener(this));
+            this.users = new User[0];
         }
 
         public void Window_Closing(object sender, CancelEventArgs e) {
@@ -134,19 +136,19 @@ namespace ChatApp {
             timer.Dispose();
         }
 
+        public void UpdateUserList(User[] users) {
+            this.users = users;
+        }
+
         private void Tick(object sender, ElapsedEventArgs e) {
             client.RefreshUserList();
 
-            UserList clientUsers = client.Users;
-
-            User[] users = clientUsers.ToArray();
-
             this.Dispatcher.Invoke(() => {
-                userCount.Content = "Users online : " + users.Length;
+                userCount.Content = "Users online : " + this.users.Length;
                 userPanel.Children.Clear();
 
                 try {
-                    foreach (User user in users) {
+                    foreach (User user in this.users) {
                         TextBlock text = new TextBlock();
                         WrapPanel wrapper = new WrapPanel();
                         if (user.Name.Length > 13) {
