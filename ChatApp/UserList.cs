@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Text;
 
 namespace ChatApp {
+    //basiclly makes it easier for me to add, remove and check for 
+    //existing users when updatind. and holds the user colors
     class UserList {
         private List<User> users;
 
