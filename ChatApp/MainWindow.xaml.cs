@@ -1,21 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Text.RegularExpressions;
 using System.Timers;
 using System.ComponentModel;
-using System.Threading;
 
 namespace ChatApp {
 
@@ -53,9 +44,11 @@ namespace ChatApp {
                 client.Disconnect();
                 connect.Content = "Connect";
                 send.IsEnabled = false;
+                message.IsEnabled = false;
                 authorize.IsEnabled = false;
                 help.IsEnabled = false;
                 authorized = false;
+                yourname.Content = "";
                 //reset GUI
                 messagePanel.Children.Clear();
                 privatePanel.Children.Clear();
@@ -70,6 +63,7 @@ namespace ChatApp {
                 if (client.Connect(address.Text.Trim(' '), Int32.Parse(port.Text.Trim(' ')))) {
                     connect.Content = "Disconnect";
                     send.IsEnabled = true;
+                    message.IsEnabled = true;
                     authorize.IsEnabled = true;
                     help.IsEnabled = true;
                     //start refresh timer
@@ -142,42 +136,57 @@ namespace ChatApp {
 
         private void Tick(object sender, ElapsedEventArgs e) {
             client.RefreshUserList();
-            List<string> users = client.Users;
 
-            try {
-                this.Dispatcher.Invoke(() => {
-                    userPanel.Children.Clear();
+            UserList clientUsers = client.Users;
 
-                    if (users.Count != 0) {
+            User[] users = clientUsers.ToArray();
 
-                        userCount.Content = "Users online : " + users.Count;
+            this.Dispatcher.Invoke(() => {
+                userCount.Content = "Users online : " + users.Length;
+                userPanel.Children.Clear();
 
-                        foreach (string user in users.ToArray()) {
-                            Label label = new Label();
-                            label.Content = user;
-
-                            //creates menuitem for right click on user list
-                            label.ContextMenu = new ContextMenu();
-                            MenuItem item = new MenuItem();
-                            item.Header = "Private message to " + user;
-                            //set tag so we can retreve user when clicked
-                            item.Tag = user;
-                            item.Click += Item_Click;
-                            label.ContextMenu.Items.Add(item);
-
-                            userPanel.Children.Add(label);
+                try {
+                    foreach (User user in users) {
+                        TextBlock text = new TextBlock();
+                        WrapPanel wrapper = new WrapPanel();
+                        if (user.Name.Length > 13) {
+                            text.Text = user.Name.Substring(0, 13) + "..";
                         }
+                        else {
+                            text.Text = user.Name;
+                        }
+                        text.FontSize = 15;
 
-                        users.Clear();
+                        Rectangle indicator = new Rectangle();
+                        indicator.Height = 10;
+                        indicator.Width = 10;
+                        indicator.Fill = (
+                            new SolidColorBrush(Color.FromRgb(user.ScreenColor[0], user.ScreenColor[1], user.ScreenColor[2]))
+                        );
+                        indicator.HorizontalAlignment = HorizontalAlignment.Left;
+                        indicator.Margin = new Thickness(5, 2, 5, 0);
+
+                        //creates menuitem for right click on user list
+                        text.ContextMenu = new ContextMenu();
+                        MenuItem item = new MenuItem();
+                        item.Header = "Private message to " + user.Name;
+                        //set tag so we can retreve user when clicked
+                        item.Tag = user.Name;
+                        item.Click += Item_Click;
+                        text.ContextMenu.Items.Add(item);
+
+
+                        wrapper.Children.Add(indicator);
+                        wrapper.Children.Add(text);
+                        userPanel.Children.Add(wrapper);
                     }
-                    else {
-                        userCount.Content = "";
-                    }
-                });
-            }
-            catch (Exception exc) {
-                logText.Content = exc.Message;
-            }
+                }
+                catch (Exception e) {
+                    Console.WriteLine(e.Message);
+                }
+
+            });
+
         }
 
         private void Item_Click(object sender, RoutedEventArgs e) {
@@ -193,19 +202,41 @@ namespace ChatApp {
 
         public void UpdateMessagePanel(TextMessage message) {
             this.Dispatcher.Invoke(() => {
-                Label label = new Label();
-                label.Content = message.ToString();
+                TextBlock text = new TextBlock();
+                text.Text = message.ToString();
+                text.FontSize = 15;
+                text.TextWrapping = TextWrapping.Wrap;
+                text.Margin = new Thickness(20, 0, 0, 0);
+                
+                Grid wrapper = new Grid();
+                wrapper.HorizontalAlignment = HorizontalAlignment.Stretch;
 
-                //byte[] color = {0, 0, 0};
-                //color[new Random().Next(1, 2)] = (byte)new Random().Next(100, 255);
-                //label.Foreground = new SolidColorBrush(Color.FromRgb(0, color[1], color[2]));
+                Rectangle indicator = new Rectangle();
+                indicator.Height = 10;
+                indicator.Width = 10;
+                indicator.HorizontalAlignment = HorizontalAlignment.Left;
+                indicator.Margin = new Thickness(5, 2, 5, 0);
+
+                User current = client.Users.Get(message.Sender);
+                if (current != null) {
+                    indicator.Fill = (
+                        new SolidColorBrush(Color.FromRgb(current.ScreenColor[0], current.ScreenColor[1], current.ScreenColor[2]))
+                    );
+                }
+                else {
+                    text.Background = new SolidColorBrush(Color.FromRgb(240, 240, 240));
+                    indicator.Fill = (
+                        new SolidColorBrush(Color.FromRgb(255, 255, 255))
+                    );
+                }
 
                 Panel panel = message.Private ? privatePanel : messagePanel;
-                panel.Children.Add(label);
+                wrapper.Children.Add(indicator);
+                wrapper.Children.Add(text);
+                panel.Children.Add(wrapper);
+
             });
         }
-
-        
 
         private void Authorize_Click(object sender, RoutedEventArgs e) {
             if (!authorized) {
@@ -221,6 +252,8 @@ namespace ChatApp {
                             logText.Content = "Login successful";
                             authorize.IsEnabled = false;
                             authorized = true;
+
+                            yourname.Content = "You : " + username.Text;
                         }
                         else {
                             logText.Content = "Login failed : username taken";

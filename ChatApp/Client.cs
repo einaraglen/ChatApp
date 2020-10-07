@@ -19,12 +19,13 @@ namespace ChatApp {
 
         private string lastError = null;
 
-        private readonly List<string> users = new List<string>();
+        private UserList users;
         private readonly MainWindow controller;
         private bool loggedIn;
 
         public Client(MainWindow mainWindow) {
             this.controller = mainWindow;
+            users = new UserList();
         }
 
         public bool Connect(string host, int port) {
@@ -67,7 +68,7 @@ namespace ChatApp {
             }
         }
 
-        public List<string> Users {
+        public UserList Users {
             get { return users; }
         }
 
@@ -139,14 +140,14 @@ namespace ChatApp {
 
             SendCommand(command);
 
-            if (users.Contains(recipient)) {
+            if (users.Get(recipient) != null) {
                 controller.UpdateMessagePanel(new TextMessage("You to " + recipient, true, message));
             }
             else {
                 controller.SetLogText("Private not sendt : No recipient with this username");
             }
 
-            return users.Contains(recipient);
+            return users.Get(recipient) != null;
         }
 
         public string GetLastError() {
@@ -175,8 +176,7 @@ namespace ChatApp {
                         break;
 
                     case "users":
-                        //<command> <user 1> <user 2> ... <user n>\n
-                        for (int i = 1; i < info.Length; i++) { users.Add(info[i]); }
+                        HandleUsers(info);
                         break;
 
                     case "cmderr":
@@ -215,9 +215,43 @@ namespace ChatApp {
             }
         }
 
+        private void HandleUsers(string[] info) {
+            //<command> <user 1> <user 2> ... <user n>\n
+            List<string> temp = new List<string>();
+            for (int i = 1; i < info.Length; i++) {
+                temp.Add(info[i]);
+            }
+
+            if (users.IsEmpty()) {
+                users.Add(temp);
+            }
+            else {
+                //adds new users
+                foreach (string user in temp) {
+                    if (!users.Contains(user)) {
+                        users.Add(user);
+                    }
+                }
+                //remove disconnected users
+                //we copy the list so we do not get enumerator exceptio
+                //for editing list while iterating it
+                User[] copyArray = users.ToArray();
+                foreach (User user in copyArray) {
+                    if (!temp.Contains(user.Name)) {
+                        users.Remove(user.Name);
+                    }
+                }
+            }
+
+        }
+
         private void HandleMessage(string[] info, bool priv) {
             //<command> <user> <msg> ... \n
             string fullMessage = "";
+
+
+
+
             for (int i = 2; i < info.Length; i++) {
                 fullMessage += info[i] + " ";
             }
@@ -235,7 +269,7 @@ namespace ChatApp {
         public void ParseIncomingCommand() {
             while (IsConnectionActive()) {
                 HandleResponse();
-            }
+      }
         }
 
     }

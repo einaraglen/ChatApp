@@ -83,13 +83,13 @@
                     <Label Grid.Row="0" Grid.Column="1" HorizontalAlignment="Center">Private</Label>
 
                     <ScrollViewer Grid.Row="1" Grid.Column="0" Background="LightGray" Margin="10 0 0 10">
-                        <StackPanel x:Name="messagePanel">
+                        <StackPanel x:Name="messagePanel" Orientation="Vertical">
                             <!-- Public Messages are put here -->
                         </StackPanel>
                     </ScrollViewer>
 
                     <ScrollViewer Grid.Row="1" Grid.Column="1" Background="LightGray" Margin="0 0 10 10">
-                        <StackPanel x:Name="privatePanel">
+                        <StackPanel x:Name="privatePanel" Orientation="Vertical">
                             <!-- Private Messages are put here -->
                         </StackPanel>
                     </ScrollViewer>
@@ -101,11 +101,13 @@
                         <ColumnDefinition Width="80"/>
                     </Grid.ColumnDefinitions>
 
-                    <TextBox Grid.Column="0" x:Name="message" FontSize="18" Margin="10 0 10 12"></TextBox>
+                    <TextBox Grid.Column="0" x:Name="message" IsEnabled="False" FontSize="18" Margin="10 0 10 12"></TextBox>
                     <Button Grid.Column="1" x:Name="send" IsEnabled="False" Width="60" Margin="10 0 10 12" HorizontalAlignment="Right">Send</Button>
                 </Grid>
             </Grid>
-            <Grid Grid.Row="1" Grid.Column="0" Background="LightGray"></Grid>
+            <Grid Grid.Row="1" Grid.Column="0" Background="LightGray">
+                <Label x:Name="yourname" HorizontalAlignment="Center" FontSize="11"></Label>
+            </Grid>
             <Grid Grid.Row="1" Grid.Column="1" Background="LightGray">
                 <Label x:Name="logText" FontSize="11" Margin="5 0 0 0"></Label>
             </Grid>
