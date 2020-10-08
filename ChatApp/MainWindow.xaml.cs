@@ -38,6 +38,13 @@ namespace ChatApp {
             connect.Click += Connect_Click;
             authorize.Click += Authorize_Click;
             help.Click += Help_Click;
+            message.KeyDown += new KeyEventHandler(message_KeyDown);
+        }
+
+        private void message_KeyDown(object sender, KeyEventArgs e) {
+            if (e.Key == Key.Enter) {
+                Send_Click(sender, e);
+            }
         }
 
         private void Connect_Click(object sender, RoutedEventArgs e) {
@@ -233,11 +240,14 @@ namespace ChatApp {
                    }
                 }
 
-                Panel panel = message.Private ? privatePanel : messagePanel;
+                StackPanel panel = message.Private ? privatePanel : messagePanel;
                 wrapper.Children.Add(indicator);
                 wrapper.Children.Add(text);
                 panel.Children.Add(wrapper);
 
+                panel.ScrollOwner = new ScrollViewer();
+
+                panel.ScrollOwner.ScrollToBottom();
             });
         }
 
