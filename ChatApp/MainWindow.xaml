@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:ChatApp"
         mc:Ignorable="d"
         Closing="Window_Closing"
-        Title="ChatApp" Height="450" Width="800">
+        Title="ChatApp" Height="500" Width="900">
     <Border BorderThickness="0 1 0 0" BorderBrush="Gray">
         <Grid>
             <Grid.ColumnDefinitions>
@@ -56,10 +56,10 @@
                 <Grid Grid.Row="0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition />
-                        <ColumnDefinition />
-                        <ColumnDefinition />
-                        <ColumnDefinition />
-                        <ColumnDefinition />
+                        <ColumnDefinition Width="130"/>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="50"/>
+                        <ColumnDefinition Width="130" />
                     </Grid.ColumnDefinitions>
 
                     <Label Grid.Column="0" HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="15">Address</Label>

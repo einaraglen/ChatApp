@@ -11,21 +11,14 @@ namespace ChatApp {
     class Client {
 
         private Socket connection;
-
-        /* for debugging
-        private readonly Logger client_logger = new Logger(true);
-        private readonly Logger server_logger = new Logger(false);
-         */
-
         private string lastError = null;
-
         private UserList users;
-        private readonly MainWindow controller;
+        private readonly Listener listener;
         private bool loggedIn;
 
-        public Client(MainWindow mainWindow) {
-            this.controller = mainWindow;
-            users = new UserList();
+        public Client(Listener listener) {
+            this.listener = listener;
+            this.users = new UserList();
         }
 
         public bool Connect(string host, int port) {
@@ -45,15 +38,13 @@ namespace ChatApp {
                 connected = true;
             }
             catch (SocketException e) {
-                //client_logger.Exception("Connection to server failed : " + e.Message);
-                controller.SetLogText("Connection to server failed : " + e.Message);
+                listener.OnException("Connection to server failed : " + e.Message);
                 lastError = e.Message;
                 connected = false;
             }
 
             if (connected) {
-                //client_logger.Log("Connected to server : " + connection.RemoteEndPoint.ToString());
-                controller.SetLogText("Connected to server : " + connection.RemoteEndPoint.ToString());
+                listener.OnConnection(connection.RemoteEndPoint.ToString());
                 StartListenThread();
             }
 
@@ -62,9 +53,9 @@ namespace ChatApp {
 
         public void Disconnect() {
             if (IsConnectionActive()) {
-                //client_logger.Log("Diconnecting from host");
                 connection.Close();
                 connection = null;
+                listener.OnDisconnect();
             }
         }
 
@@ -84,15 +75,13 @@ namespace ChatApp {
                     return true;
                 }
                 catch (Exception e) {
-                    //server_logger.Exception("Sending command failed : " + e.Message);
-                    controller.SetLogText("Sending command failed : " + e.Message);
+                    listener.OnException("Sending command failed : " + e.Message);
                     return false;                
                 }
             }
             else {
                 lastError = "Command not sendt, Connection not active";
-                //client_logger.Exception(lastError);
-                controller.SetLogText(lastError);
+                listener.onCommandError(lastError);
                 return false;
             }
         }
@@ -100,10 +89,9 @@ namespace ChatApp {
         public bool SendPublicMessage(string message) {
             string command = "msg " + message;
             bool success = SendCommand(command);
-            controller.UpdateMessagePanel(new TextMessage("You", false, message));
+            listener.OnMessageSend(new TextMessage("You", false, message));
             if (!success) {
-                //server_logger.Exception("Public not sendt : " + lastError);
-                controller.SetLogText("Public not sendt : " + lastError);
+                listener.OnMessageError("Public not sendt : " + lastError);
             }
 
             return success;
@@ -141,10 +129,10 @@ namespace ChatApp {
             SendCommand(command);
 
             if (users.Get(recipient) != null) {
-                controller.UpdateMessagePanel(new TextMessage("You to " + recipient, true, message));
+                listener.OnMessageSend(new TextMessage("You to " + recipient, true, message));
             }
             else {
-                controller.SetLogText("Private not sendt : No recipient with this username");
+                listener.OnMessageError("Private not sendt : No recipient with this username");
             }
 
             return users.Get(recipient) != null;
@@ -152,10 +140,6 @@ namespace ChatApp {
 
         public string GetLastError() {
             return (lastError != null) ? lastError : "";
-        }
-
-        public void OnMessageRecieved(TextMessage message) {
-            controller.UpdateMessagePanel(message);
         }
 
         private void HandleResponse() {
@@ -201,7 +185,7 @@ namespace ChatApp {
                         break;
 
                     case "supported":
-                        controller.SetLogText("Server supports commands : " + response.Substring(10));
+                        listener.OnSupportedCommands(response);
                         break;
 
                     default:
@@ -210,7 +194,6 @@ namespace ChatApp {
                 }
             }
             catch (Exception e) {
-                //client_logger.Exception("No response from server : " + e.Message);
                 lastError = "No response from server : " + e.Message;
             }
         }
@@ -219,7 +202,8 @@ namespace ChatApp {
             //<command> <user 1> <user 2> ... <user n>\n
             List<string> temp = new List<string>();
             for (int i = 1; i < info.Length; i++) {
-                temp.Add(info[i]);
+                String cleanedUser = Regex.Replace(info[i], @"\t|\n|\r", "");
+                temp.Add(cleanedUser);
             }
 
             if (users.IsEmpty()) {
@@ -243,6 +227,7 @@ namespace ChatApp {
                 }
             }
 
+            listener.OnUserList(users.ToArray());
         }
 
         private void HandleMessage(string[] info, bool priv) {
@@ -257,7 +242,7 @@ namespace ChatApp {
             }
             //remove newline, struggled to find fix here
             fullMessage = Regex.Replace(fullMessage, @"\t|\n|\r", "");
-            OnMessageRecieved(new TextMessage(info[1], priv, fullMessage));
+            listener.OnMessageReceived(new TextMessage(info[1], priv, fullMessage));
         }
 
         public void StartListenThread() {
@@ -269,7 +254,7 @@ namespace ChatApp {
         public void ParseIncomingCommand() {
             while (IsConnectionActive()) {
                 HandleResponse();
-      }
+            }
         }
 
     }
