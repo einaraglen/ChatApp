@@ -78,7 +78,7 @@ namespace ChatApp {
                     listener.OnException("Sending command failed : " + e.Message);
                     return false;                
                 }
-            }
+            } 
             else {
                 lastError = "Command not sendt, Connection not active";
                 listener.onCommandError(lastError);
@@ -178,6 +178,7 @@ namespace ChatApp {
                     case "loginerr":
                         loggedIn = false;
                         lastError = "Login error : " + response.Substring(8);
+                        listener.OnLoginResult(loggedIn, lastError);
                         break;
 
                     case "loginok\n":

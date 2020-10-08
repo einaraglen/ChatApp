@@ -258,9 +258,6 @@ namespace ChatApp {
 
                             yourname.Content = "You : " + username.Text;
                         }
-                        else {
-                            logText.Content = "Login failed : username taken";
-                        }
                     }
 
                     loginRow.Height = new GridLength(0);

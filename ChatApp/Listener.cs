@@ -21,7 +21,7 @@ namespace ChatApp {
 
         public void OnLoginResult(bool success, String errMsg) {
             if (!success) {
-                this.controller.SetLogText("Login Error : " + errMsg);
+                this.controller.SetLogText(errMsg);
             }
         }
 
