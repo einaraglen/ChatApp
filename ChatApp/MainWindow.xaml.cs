@@ -44,6 +44,7 @@ namespace ChatApp {
             if (client.IsConnectionActive()) {
                 //disconnect from server
                 client.Disconnect();
+                //reset GUI
                 connect.Content = "Connect";
                 send.IsEnabled = false;
                 message.IsEnabled = false;
@@ -51,13 +52,11 @@ namespace ChatApp {
                 help.IsEnabled = false;
                 authorized = false;
                 yourname.Content = "";
-                //reset GUI
                 messagePanel.Children.Clear();
                 privatePanel.Children.Clear();
                 userPanel.Children.Clear();
                 userCount.Content = "";
-                logText.Content = "Disconnected from host";
-
+                //stop asking for userlist
                 StopTimer();
             }
             else if (address.Text.Trim(' ') != "" && port.Text.Trim(' ') != "") {
@@ -226,10 +225,12 @@ namespace ChatApp {
                     );
                 }
                 else {
-                    text.Background = new SolidColorBrush(Color.FromRgb(240, 240, 240));
-                    indicator.Fill = (
-                        new SolidColorBrush(Color.FromRgb(255, 255, 255))
-                    );
+                   if (message.Sender.StartsWith('Y')) {
+                        text.Background = new SolidColorBrush(Color.FromRgb(240, 240, 240));
+                        indicator.Fill = (
+                            new SolidColorBrush(Color.FromRgb(255, 255, 255))
+                        );
+                   }
                 }
 
                 Panel panel = message.Private ? privatePanel : messagePanel;

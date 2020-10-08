@@ -56,10 +56,10 @@
                 <Grid Grid.Row="0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition />
-                        <ColumnDefinition />
-                        <ColumnDefinition />
-                        <ColumnDefinition />
-                        <ColumnDefinition />
+                        <ColumnDefinition Width="130"/>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="50"/>
+                        <ColumnDefinition Width="130" />
                     </Grid.ColumnDefinitions>
 
                     <Label Grid.Column="0" HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="15">Address</Label>

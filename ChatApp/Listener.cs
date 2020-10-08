@@ -15,6 +15,10 @@ namespace ChatApp {
             this.controller.SetLogText("Connected to server : " + host);
         }
 
+        public void OnDisconnect() {
+            this.controller.SetLogText("Disconnected from host");
+        }
+
         public void OnLoginResult(bool success, String errMsg) {
             if (!success) {
                 this.controller.SetLogText("Login Error : " + errMsg);

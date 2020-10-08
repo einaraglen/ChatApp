@@ -55,6 +55,7 @@ namespace ChatApp {
             if (IsConnectionActive()) {
                 connection.Close();
                 connection = null;
+                listener.OnDisconnect();
             }
         }
 
@@ -201,7 +202,8 @@ namespace ChatApp {
             //<command> <user 1> <user 2> ... <user n>\n
             List<string> temp = new List<string>();
             for (int i = 1; i < info.Length; i++) {
-                temp.Add(info[i]);
+                String cleanedUser = Regex.Replace(info[i], @"\t|\n|\r", "");
+                temp.Add(cleanedUser);
             }
 
             if (users.IsEmpty()) {
