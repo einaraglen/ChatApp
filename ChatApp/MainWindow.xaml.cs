@@ -191,7 +191,7 @@ namespace ChatApp {
         }
 
         private void Item_Click(object sender, RoutedEventArgs e) {
-            //get the name from the sender, given through tag
+            //get the name from the sender, given through tag.
             string userName = ((MenuItem)sender).Tag.ToString();
             message.Text = "/private " + userName + " ";
         }
