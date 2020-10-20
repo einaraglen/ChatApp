@@ -7,4 +7,12 @@
     <ApplicationIcon>appicon.ico</ApplicationIcon>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Folder Include="view\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Include="App.xaml" />
+  </ItemGroup>
+
 </Project>
